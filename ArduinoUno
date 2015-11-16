@@ -1,0 +1,422 @@
+/*
+Proyecto Brazo Robotico creado por :
+
+Aldana Rodriguez
+Diego Hernan Pravisani
+Sebastián Bauer
+Federico Raele
+Lautaro Gimenez 
+
+Con la ayuda de los profesores:
+
+Agustín Reyes
+Sebastián Kennedy
+*/
+
+#include <Servo.h>
+#include <SoftwareSerial.h>
+SoftwareSerial esp8266(8, 7); // RX | TX
+/*
+Posicion inicial de los servos
+Iniciaran en posicion central (90°)
+*/
+int servoval1=0; //Posicion inicial del servo 1
+int servoval2=0; //Posicion inicial del servo 2
+int servoval3=90; //Posicion inicial del servo 3
+int servoval4=65;//Posicion inicial del servo 4
+int servoval5=0;
+int servoval6 = 180;
+int tecla; //tecla para usar
+int seleccion;
+//definimos las variables ejex y ejey
+int ejeX1;            
+int ejeY1;
+int ejeX2;             
+int ejeY2; 
+// Declaración de los servos
+Servo servo1;
+Servo servo2;
+Servo servo3;
+Servo servo4;
+Servo servo5;
+
+void sendCommand(char *comando)
+{
+  
+  String response;
+  char c;
+
+  Serial.write("Enviando comando ");
+  Serial.println(comando);
+
+  delay(200);
+  esp8266.write(comando);
+  esp8266.write("\r");
+
+  delay(300);
+
+  while (esp8266.available())
+  {
+    delay(5);
+    c = esp8266.read(); // TODO: Hacer TIMEOUT;
+    response += c;
+  }
+
+  // Leemos la respuesta
+  //response = esp8266.readString();
+  Serial.println(response);
+
+}
+
+bool ConfigureESP8266()
+{
+  sendCommand("AT");
+  sendCommand("AT+CIFSR");
+  sendCommand("AT+CIPMUX=1");
+  sendCommand("AT+CIPSERVER=1,80");
+}
+
+void setup() {
+  Serial.begin(9600);
+  esp8266.begin(9600); 
+    Serial.println("Starting...");
+
+  // Configuramos y levantamos el servidor HTTP
+  ConfigureESP8266();
+   // Vincular servos
+
+  servo1.attach(2);//Girar pinza
+  servo2.attach(3);//Pinza
+  //Brazo
+  servo3.write(90);
+  servo3.attach(4);
+  servo4.write(65);//Estan corridos 25 grados
+  servo4.attach(5);
+  servo5.attach(6);
+  servo5.write(95);//Rotacion(servo de rotacion continua) 95 es quieto
+}
+
+void loop() {
+   
+  String response, comando,parsear;
+  int index1, index2, index3, index4;
+  char c;
+  char toParse[255];
+  bool bandera;
+  servoval5=0;
+  servoval6 = 180;
+
+ if (Serial.available()>0 || esp8266.available()){
+  
+    
+    
+    while (esp8266.available())
+      {
+        delay(5);
+        c = esp8266.read(); // TODO: Hacer TIMEOUT;
+        parsear += c;
+      }
+   
+    parsear.toCharArray(toParse, 255);
+    comando = "";
+    // Read each command pair
+    char* line = strtok(toParse, "\n");
+    while (line != 0)
+    {
+  
+        response = line;
+        if( response.startsWith("+IPD") )
+        {
+            Serial.println(response);
+            index1 = response.indexOf('/');
+            index2 = response.indexOf(' ', index1+1);
+            comando = response.substring(index1+1,index2+1);
+            break;
+        }
+        
+        line = strtok(0, "\n");
+    }
+ tecla = Serial.read(); 
+ //FUNCION AUTOMATICA
+ if(tecla == '1' || !comando.equals(""))
+  {
+   while(servoval3 > 90)
+    {
+     
+    servo3.write(servoval3--);//25
+    servo4.write(servoval4++);//0
+    delay(50);
+    }
+    delay(1000);
+    while(servoval1 >= 0)//Girar pinza
+      {
+      servoval1--;
+      delay(50);
+      servo1.write(servoval1);
+     }
+     
+    delay(1000);
+     
+    while(servoval2 >= 0) //Cerrar Pinza
+      {
+      servoval2--;
+      delay(50);
+      servo2.write(servoval2);
+      
+      }
+    
+    delay(1000);
+    
+
+    
+    while(servoval5 <=95){
+    
+    delay(4);
+    servo5.write(servoval5);
+    servoval5++;
+
+      
+    }
+    
+    delay(1000);  
+     while(servoval3 < 120)
+    {
+    servo3.write(servoval3++);  //para un lado
+    servo4.write(servoval4--);
+    
+
+    delay (50);
+    }
+    delay(1000);
+    
+    while(servoval2 <= 20)
+      {
+      servoval2++;
+      delay(50);
+      servo2.write(servoval2);
+      
+  }
+    delay(1000);
+    while(servoval2 >= 0)
+  {
+      servoval2--;
+      delay(50);
+      servo2.write(servoval2);
+      
+  }
+    delay(1000);
+    
+    while(servoval3 > 90)
+    {
+    
+    servo3.write(servoval3--);
+    servo4.write(servoval4++);
+    delay(50);
+    }
+    delay(1000);
+    while(servoval6 >= 95){
+    
+    delay(4);
+    servo5.write(servoval6);
+    servoval6--;
+
+      
+    }
+    delay(1000);
+    while(servoval3 >= 60)
+    {
+    servo3.write(servoval3--); 
+    servo4.write(servoval4++); 
+    delay (50);
+    }
+    delay(1000);
+    while(servoval1 <=170)
+      { 
+        servoval1++;
+        delay(20);
+        servo1.write(servoval1);
+      }
+  
+    delay(1000);
+    while(servoval2 <= 20)
+  {
+      servoval2++;
+      delay(50);
+      servo2.write(servoval2);
+      
+  }
+ 
+    delay(1000);
+     while(servoval2 >= 0) //Cerrar Pinza
+      {
+      servoval2--;
+      delay(50);
+      servo2.write(servoval2);
+      
+      }
+       delay(1000);
+  
+  while(servoval3 <= 90)
+    {
+    
+    servo3.write(servoval3++);//25
+    servo4.write(servoval4--);//0
+    delay(50);
+    }
+      
+  }
+  //FUNCION MANUAL CON JOYSTICK
+  else if(tecla == '2') 
+  {
+    Serial.print("MODO 2");
+  while(1){
+    
+    ejeX1 = analogRead(A0);    //leemos el puerto analogico A0 y lo cargamos a ejex
+    ejeY1 = analogRead(A1);
+    ejeX2 = analogRead(A2);    //leemos el puerto analogico A0 y lo cargamos a ejex
+    ejeY2 = analogRead(A3);
+    
+     
+    while(ejeY1 >= 515)
+        {
+        
+        
+        delay(10);
+        servo2.write(servoval2);
+        ejeX1 = analogRead(A0);    //leemos el puerto analogico A0 y lo cargamos a ejex
+        ejeY1 = analogRead(A1);
+        ejeX2 = analogRead(A2);    //leemos el puerto analogico A0 y lo cargamos a ejex
+        ejeY2 = analogRead(A3);
+        
+        
+        if(servoval2 < 60)
+         {
+          servoval2++;
+        }
+        else
+        {
+          servoval2 = 59;
+          }
+      }
+    
+      while(ejeY1 <= 500)
+        {
+         
+           
+          ejeX1 = analogRead(A0);    //leemos el puerto analogico A0 y lo cargamos a ejex
+          ejeY1 = analogRead(A1);
+          ejeX2 = analogRead(A2);    //leemos el puerto analogico A0 y lo cargamos a ejex
+          ejeY2 = analogRead(A3);
+          
+          delay(10);
+          servo2.write(servoval2);
+          if(servoval2 > 0)
+         {
+          servoval2--;
+        }
+        else
+        {
+          servoval2 = 1;
+          }
+ 
+        }
+        while(ejeX1 >= 510)
+        {
+        
+        servoval1++;
+        delay(10);
+        servo1.write(servoval1);
+        ejeX1 = analogRead(A0);    //leemos el puerto analogico A0 y lo cargamos a ejex
+        ejeY1 = analogRead(A1);
+        ejeX2 = analogRead(A2);    //leemos el puerto analogico A0 y lo cargamos a ejex
+        ejeY2 = analogRead(A3);
+        if(servoval1 < 170)
+         {
+          servoval1++;
+        }
+        else
+        {
+          servoval1 = 169;
+          }
+        }
+    
+      while(ejeX1 <= 490)
+        {
+        
+        ejeX1 = analogRead(A0);    //leemos el puerto analogico A0 y lo cargamos a ejex
+        ejeY1 = analogRead(A1);
+        ejeX2 = analogRead(A2);    //leemos el puerto analogico A0 y lo cargamos a ejex
+        ejeY2 = analogRead(A3);
+        
+        delay(10);
+        servo1.write(servoval1);
+        
+        if(servoval1 > 0)
+         {
+          servoval1--;
+        }
+        else
+        {
+          servoval1 = 1;
+          }
+        
+        }
+        bandera = false;
+    while(ejeY2 <= 506)
+        {
+        
+        
+        delay(15);
+        servo3.write(servoval3);
+        servo4.write(servoval4);
+        ejeX1 = analogRead(A0);    //leemos el puerto analogico A0 y lo cargamos a ejex
+        ejeY1 = analogRead(A1);
+        ejeX2 = analogRead(A2);    //leemos el puerto analogico A0 y lo cargamos a ejex
+        ejeY2 = analogRead(A3);
+
+        
+        if(servoval3 >= 60 && servoval3 < 120 )
+         {
+           delay(15);
+          servoval3++;
+          servoval4--;
+        }
+        else if (servoval3 >= 120)
+        {
+          servoval3 --;
+          servoval4 ++;
+          }
+      }
+      bandera = false;
+      while(ejeY2 >= 518)
+        {
+        
+        delay(15);
+        servo3.write(servoval3);
+        servo4.write(servoval4);
+        ejeX1 = analogRead(A0);    //leemos el puerto analogico A0 y lo cargamos a ejex
+        ejeY1 = analogRead(A1);
+        ejeX2 = analogRead(A2);    //leemos el puerto analogico A0 y lo cargamos a ejex
+        ejeY2 = analogRead(A3);
+        
+        if(servoval3 <= 120 && servoval3 > 60 )
+         {
+           delay(15);
+          servoval3--;
+          servoval4++;
+        }
+        else if (servoval3 <= 60)
+        {
+          servoval3 ++;
+          servoval4 --;
+          }
+          
+      }
+      
+
+}  
+}
+}
+  
+
+}
